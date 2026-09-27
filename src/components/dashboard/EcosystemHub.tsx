@@ -51,12 +51,12 @@ const CHANNELS: Channel[] = [
   },
 ];
 
-/* ── Animated connector line ─────────────────────────────── */
+/* ── Animated connector line with min-width and shrink protection ── */
 function Connector({ channel, active }: { channel: Channel; active: boolean }) {
   return (
     <div
-      className="relative flex h-px shrink-0 items-center overflow-visible"
-      style={{ width: "clamp(18px, 5vw, 56px)" }}
+      className="relative flex h-px min-w-[16px] shrink-0 items-center overflow-visible"
+      style={{ width: "clamp(16px, 4vw, 52px)" }}
     >
       {/* Static base line */}
       <div
@@ -64,7 +64,7 @@ function Connector({ channel, active }: { channel: Channel; active: boolean }) {
         style={{
           background: active
             ? `linear-gradient(90deg, rgba(${channel.glowRgb},0.1), rgba(${channel.glowRgb},0.9), rgba(${channel.glowRgb},0.1))`
-            : "rgba(148,163,184,0.2)",
+            : "rgba(148,163,184,0.25)",
           boxShadow: active
             ? `0 0 8px 2px rgba(${channel.glowRgb},0.5)`
             : "none",
@@ -104,18 +104,18 @@ function ChannelNode({
       onMouseLeave={onLeave}
       onFocus={onEnter}
       onBlur={onLeave}
-      className="group relative flex flex-col items-center focus:outline-none"
+      className="group relative flex shrink-0 flex-col items-center focus:outline-none"
       aria-label={channel.label}
     >
       {/* Tooltip */}
       <span
-        className={`pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2 py-1 text-[9px] font-bold tracking-wide text-white shadow-lg transition-all duration-300 ${
+        className={`pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2 py-0.5 text-[8.5px] sm:text-[9px] font-bold tracking-wide text-white shadow-lg transition-all duration-300 z-30 ${
           active
             ? "translate-y-0 opacity-100"
             : "translate-y-1 opacity-0"
         }`}
         style={{
-          background: "rgba(15,23,42,0.88)",
+          background: "rgba(15,23,42,0.92)",
           backdropFilter: "blur(8px)",
         }}
         role="tooltip"
@@ -125,24 +125,24 @@ function ChannelNode({
 
       {/* Icon chip */}
       <span
-        className={`grid size-8 place-items-center rounded-xl transition-all duration-300 ${channel.iconBg}`}
+        className={`grid size-7 sm:size-8 place-items-center rounded-lg sm:rounded-xl transition-all duration-300 ${channel.iconBg}`}
         style={{
-          transform: active ? "scale(1.18)" : "scale(1)",
+          transform: active ? "scale(1.15)" : "scale(1)",
           boxShadow: active
-            ? `0 4px 18px -4px rgba(${channel.glowRgb},0.6), 0 0 0 1.5px rgba(${channel.glowRgb},0.35)`
+            ? `0 4px 16px -3px rgba(${channel.glowRgb},0.6), 0 0 0 1.5px rgba(${channel.glowRgb},0.35)`
             : "none",
         }}
       >
         <Icon
-          className={`size-3.5 transition-all duration-300 ${channel.iconColor}`}
+          className={`size-3 sm:size-3.5 transition-all duration-300 ${channel.iconColor}`}
           strokeWidth={active ? 2.5 : 2}
         />
       </span>
 
-      {/* Label */}
+      {/* Label: text-[10px] on mobile, md:text-xs on desktop */}
       <span
-        className="mt-1 whitespace-nowrap text-[9px] font-semibold transition-all duration-300"
-        style={{ color: active ? "#1e293b" : "#94a3b8" }}
+        className="mt-1 whitespace-nowrap text-[10px] md:text-xs font-semibold tracking-tight transition-all duration-300"
+        style={{ color: active ? "#1e293b" : "#64748b" }}
       >
         {channel.label}
       </span>
@@ -172,9 +172,13 @@ export function EcosystemHub({ delay = 0 }: { delay?: number }) {
           90%  { opacity: 1; }
           100% { left: 100%; opacity: 0; }
         }
-        @keyframes hub-halo {
+        @keyframes hub-halo-sm {
+          0%   { transform: scale(1);   opacity: 0.5; }
+          100% { transform: scale(1.45); opacity: 0; }
+        }
+        @keyframes hub-halo-lg {
           0%   { transform: scale(1);   opacity: 0.55; }
-          100% { transform: scale(1.95); opacity: 0; }
+          100% { transform: scale(1.85); opacity: 0; }
         }
         @keyframes badge-breathe {
           0%, 100% { box-shadow: 0 0 0 0 rgba(0,128,128,0); }
@@ -183,91 +187,100 @@ export function EcosystemHub({ delay = 0 }: { delay?: number }) {
       `}</style>
 
       <div
-        className="panel rise overflow-hidden"
+        className="panel rise relative w-full overflow-hidden rounded-2xl"
         style={{
           animationDelay: `${delay}ms`,
           background: "rgba(255,255,255,0.92)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
         }}
+        aria-label="Omni-Channel Status Bar"
       >
-        <div className="flex flex-wrap items-center justify-center gap-x-0 gap-y-4 px-4 py-3.5 sm:flex-nowrap sm:gap-y-0 sm:px-6">
+        {/* Horizontal scroll container with touch snap, hidden scrollbars, and single-line flex-nowrap */}
+        <div className="flex w-full flex-nowrap items-center overflow-x-auto overflow-y-hidden px-3 py-3 sm:px-6 sm:py-3.5 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max flex-nowrap items-center justify-between sm:justify-center w-full gap-2 sm:gap-0">
 
-          {/* ── Left two nodes ── */}
-          {CHANNELS.slice(0, 2).map((ch) => (
-            <div key={ch.id} className="flex items-center">
-              <ChannelNode
-                channel={ch}
-                active={activeId === ch.id}
-                onEnter={() => setActiveId(ch.id)}
-                onLeave={() => setActiveId(null)}
+            {/* ── Left two nodes (Web Design, Social Media) ── */}
+            {CHANNELS.slice(0, 2).map((ch) => (
+              <div key={ch.id} className="flex shrink-0 items-center snap-start">
+                <ChannelNode
+                  channel={ch}
+                  active={activeId === ch.id}
+                  onEnter={() => setActiveId(ch.id)}
+                  onLeave={() => setActiveId(null)}
+                />
+                <Connector channel={ch} active={activeId === ch.id} />
+              </div>
+            ))}
+
+            {/* ── Central Hub: scaled and padded compactly on mobile ── */}
+            <div className="relative mx-1.5 sm:mx-3 flex shrink-0 flex-col items-center snap-center">
+              {/* Layered halo rings: compact on mobile, expansive on sm+ */}
+              <span
+                className="absolute size-9 sm:size-11 rounded-xl sm:rounded-2xl bg-brand"
+                style={{
+                  animation: "hub-halo-sm 2.2s ease-out infinite",
+                }}
               />
-              <Connector channel={ch} active={activeId === ch.id} />
-            </div>
-          ))}
+              <span
+                className="absolute size-9 sm:size-11 rounded-xl sm:rounded-2xl bg-brand opacity-25"
+                style={{
+                  animation: "hub-halo-sm 2.2s ease-out 1.1s infinite",
+                }}
+              />
 
-          {/* ── Central Hub ── */}
-          <div className="relative mx-2 flex shrink-0 flex-col items-center">
-            {/* Layered halo rings */}
-            <span
-              className="absolute size-12 rounded-2xl bg-brand"
-              style={{ animation: "hub-halo 2.2s ease-out infinite" }}
-            />
-            <span
-              className="absolute size-12 rounded-2xl bg-brand opacity-30"
-              style={{ animation: "hub-halo 2.2s ease-out 1.1s infinite" }}
-            />
-
-            {/* Hub body */}
-            <span
-              className="relative z-10 grid size-9 place-items-center rounded-xl bg-brand"
-              style={{
-                boxShadow:
-                  "0 0 0 2px rgba(0,128,128,0.25), 0 4px 20px -4px rgba(0,128,128,0.55)",
-              }}
-            >
-              <BarChart3 className="size-4 text-white" strokeWidth={2.5} />
-            </span>
-
-            {/* Label */}
-            <span className="mt-1 text-[9px] font-extrabold tracking-tight text-brand">
-              Ignishun Tech
-            </span>
-
-            {/* Live pill */}
-            <span className="mt-0.5 flex items-center gap-1 rounded-full bg-brand/10 px-1.5 py-px">
-              <span className="size-1 animate-pulse rounded-full bg-brand" />
-              <span className="text-[7.5px] font-bold uppercase tracking-widest text-brand">
-                Live
+              {/* Hub body */}
+              <span
+                className="relative z-10 grid size-7 sm:size-9 place-items-center rounded-lg sm:rounded-xl bg-brand shadow-card"
+                style={{
+                  boxShadow:
+                    "0 0 0 1.5px rgba(0,128,128,0.2), 0 3px 14px -3px rgba(0,128,128,0.5)",
+                }}
+              >
+                <BarChart3 className="size-3.5 sm:size-4 text-white" strokeWidth={2.5} />
               </span>
-            </span>
-          </div>
 
-          {/* ── Right two nodes ── */}
-          {CHANNELS.slice(2, 4).map((ch) => (
-            <div key={ch.id} className="flex items-center">
-              <Connector channel={ch} active={activeId === ch.id} />
-              <ChannelNode
-                channel={ch}
-                active={activeId === ch.id}
-                onEnter={() => setActiveId(ch.id)}
-                onLeave={() => setActiveId(null)}
-              />
+              {/* Central Label */}
+              <span className="mt-1 whitespace-nowrap text-[9px] md:text-xs font-extrabold tracking-tight text-brand">
+                Ignishun Tech
+              </span>
+
+              {/* Live pill */}
+              <span className="mt-0.5 flex items-center gap-1 rounded-full bg-brand/10 px-1.5 py-px">
+                <span className="size-1 animate-pulse rounded-full bg-brand" />
+                <span className="text-[7px] sm:text-[7.5px] font-bold uppercase tracking-widest text-brand">
+                  Live
+                </span>
+              </span>
             </div>
-          ))}
 
-          {/* ── Right status pill ── */}
-          <div className="hidden items-center gap-2.5 sm:ml-auto sm:flex sm:shrink-0">
-            <span className="text-[10px] font-medium text-slate-400">
-              Zero hand-offs
-            </span>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-[10px] font-bold text-brand"
-              style={{ animation: "badge-breathe 3s ease-in-out infinite" }}
-            >
-              <span className="size-1.5 animate-pulse rounded-full bg-brand" />
-              4 / 4 Active
-            </span>
+            {/* ── Right two nodes (Paid Ads, SEO & Content) ── */}
+            {CHANNELS.slice(2, 4).map((ch) => (
+              <div key={ch.id} className="flex shrink-0 items-center snap-start">
+                <Connector channel={ch} active={activeId === ch.id} />
+                <ChannelNode
+                  channel={ch}
+                  active={activeId === ch.id}
+                  onEnter={() => setActiveId(ch.id)}
+                  onLeave={() => setActiveId(null)}
+                />
+              </div>
+            ))}
+
+            {/* ── Right status pill (visible on sm+ screens) ── */}
+            <div className="ml-3 hidden items-center gap-2 sm:flex sm:shrink-0 lg:ml-6">
+              <span className="text-[10px] md:text-xs font-medium text-slate-400 whitespace-nowrap">
+                Zero hand-offs
+              </span>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-[10px] md:text-xs font-bold text-brand whitespace-nowrap"
+                style={{ animation: "badge-breathe 3s ease-in-out infinite" }}
+              >
+                <span className="size-1.5 animate-pulse rounded-full bg-brand" />
+                4 / 4 Active
+              </span>
+            </div>
+
           </div>
         </div>
       </div>
