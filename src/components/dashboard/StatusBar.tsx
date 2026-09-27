@@ -18,7 +18,7 @@ const TAB_CONFIGS: TabConfig[] = [
 
 export function StatusBar() {
   const { pathname } = useLocation();
-  const cfg = TAB_CONFIGS.find((c) => c.pathname === pathname) ?? TAB_CONFIGS[0];
+  const cfg = TAB_CONFIGS.find((c) => c.pathname === pathname) ?? TAB_CONFIGS[0]!;
 
   return (
     <div

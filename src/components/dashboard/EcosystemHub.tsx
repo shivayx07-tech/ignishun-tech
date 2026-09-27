@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Globe, Megaphone, Search, Share2, BarChart3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 type Channel = {
   id: string;
+  to: "/" | "/web-design" | "/social-media" | "/paid-ads" | "/seo";
   label: string;
+  tooltipText: string;
   icon: LucideIcon;
   iconBg: string;
   iconColor: string;
@@ -15,7 +18,9 @@ type Channel = {
 const CHANNELS: Channel[] = [
   {
     id: "web",
+    to: "/web-design",
     label: "Web Design",
+    tooltipText: "✦ Web Design & Core Vitals",
     icon: Globe,
     iconBg: "bg-sky/10",
     iconColor: "text-sky",
@@ -24,7 +29,9 @@ const CHANNELS: Channel[] = [
   },
   {
     id: "social",
+    to: "/social-media",
     label: "Social Media",
+    tooltipText: "✦ Social Media Growth",
     icon: Share2,
     iconBg: "bg-mint/15",
     iconColor: "text-mint-ink",
@@ -33,7 +40,9 @@ const CHANNELS: Channel[] = [
   },
   {
     id: "ads",
+    to: "/paid-ads",
     label: "Paid Ads",
+    tooltipText: "✦ Paid Ads ROI & Spend",
     icon: Megaphone,
     iconBg: "bg-brand/10",
     iconColor: "text-brand",
@@ -42,7 +51,9 @@ const CHANNELS: Channel[] = [
   },
   {
     id: "seo",
+    to: "/seo",
     label: "SEO & Content",
+    tooltipText: "✦ SEO & Content Strategy",
     icon: Search,
     iconBg: "bg-sky/10",
     iconColor: "text-sky",
@@ -89,28 +100,34 @@ function Connector({ channel, active }: { channel: Channel; active: boolean }) {
 function ChannelNode({
   channel,
   active,
+  isHovered,
+  onClick,
   onEnter,
   onLeave,
 }: {
   channel: Channel;
   active: boolean;
+  isHovered: boolean;
+  onClick: () => void;
   onEnter: () => void;
   onLeave: () => void;
 }) {
   const Icon = channel.icon;
   return (
     <button
+      type="button"
+      onClick={onClick}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={onEnter}
       onBlur={onLeave}
-      className="group relative flex shrink-0 flex-col items-center focus:outline-none"
-      aria-label={channel.label}
+      className="group relative flex shrink-0 flex-col items-center focus:outline-none cursor-pointer active:scale-95 transition-transform duration-150"
+      aria-label={`${channel.label} navigation tab`}
     >
       {/* Tooltip */}
       <span
         className={`pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2 py-0.5 text-[8.5px] sm:text-[9px] font-bold tracking-wide text-white shadow-lg transition-all duration-300 z-30 ${
-          active
+          isHovered
             ? "translate-y-0 opacity-100"
             : "translate-y-1 opacity-0"
         }`}
@@ -120,7 +137,7 @@ function ChannelNode({
         }}
         role="tooltip"
       >
-        ✦ Synchronized · Zero Hand-offs
+        {channel.tooltipText}
       </span>
 
       {/* Icon chip */}
@@ -141,8 +158,9 @@ function ChannelNode({
 
       {/* Label: text-[10px] on mobile, md:text-xs on desktop */}
       <span
-        className="mt-1 whitespace-nowrap text-[10px] md:text-xs font-semibold tracking-tight transition-all duration-300"
-        style={{ color: active ? "#1e293b" : "#64748b" }}
+        className={`mt-1 whitespace-nowrap text-[10px] md:text-xs font-semibold tracking-tight transition-all duration-300 ${
+          active ? "text-slate-900 font-bold" : "text-slate-500 group-hover:text-slate-800"
+        }`}
       >
         {channel.label}
       </span>
@@ -161,7 +179,18 @@ function ChannelNode({
 
 /* ── Main component ─────────────────────────────────────── */
 export function EcosystemHub({ delay = 0 }: { delay?: number }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Match current route to a channel ID or "overview" for the central node
+  const currentRouteId =
+    CHANNELS.find((ch) => ch.to === location.pathname)?.id ??
+    (location.pathname === "/" ? "overview" : null);
+
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Active channel is the hovered one if hovering, otherwise the current route
+  const activeId = hoveredId ?? currentRouteId;
 
   return (
     <>
@@ -206,15 +235,42 @@ export function EcosystemHub({ delay = 0 }: { delay?: number }) {
                 <ChannelNode
                   channel={ch}
                   active={activeId === ch.id}
-                  onEnter={() => setActiveId(ch.id)}
-                  onLeave={() => setActiveId(null)}
+                  isHovered={hoveredId === ch.id}
+                  onClick={() => navigate({ to: ch.to })}
+                  onEnter={() => setHoveredId(ch.id)}
+                  onLeave={() => setHoveredId(null)}
                 />
                 <Connector channel={ch} active={activeId === ch.id} />
               </div>
             ))}
 
             {/* ── Central Hub: scaled and padded compactly on mobile ── */}
-            <div className="relative mx-1.5 sm:mx-3 flex shrink-0 flex-col items-center snap-center">
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/" })}
+              onMouseEnter={() => setHoveredId("overview")}
+              onMouseLeave={() => setHoveredId(null)}
+              onFocus={() => setHoveredId("overview")}
+              onBlur={() => setHoveredId(null)}
+              className="group relative mx-1.5 sm:mx-3 flex shrink-0 flex-col items-center snap-center focus:outline-none cursor-pointer active:scale-95 transition-transform duration-150"
+              aria-label="Ignishun Tech — Overview tab"
+            >
+              {/* Tooltip */}
+              <span
+                className={`pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2 py-0.5 text-[8.5px] sm:text-[9px] font-bold tracking-wide text-white shadow-lg transition-all duration-300 z-30 ${
+                  hoveredId === "overview"
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-1 opacity-0"
+                }`}
+                style={{
+                  background: "rgba(15,23,42,0.92)",
+                  backdropFilter: "blur(8px)",
+                }}
+                role="tooltip"
+              >
+                ✦ Hub Core · Overview
+              </span>
+
               {/* Layered halo rings: compact on mobile, expansive on sm+ */}
               <span
                 className="absolute size-9 sm:size-11 rounded-xl sm:rounded-2xl bg-brand"
@@ -231,17 +287,25 @@ export function EcosystemHub({ delay = 0 }: { delay?: number }) {
 
               {/* Hub body */}
               <span
-                className="relative z-10 grid size-7 sm:size-9 place-items-center rounded-lg sm:rounded-xl bg-brand shadow-card"
+                className={`relative z-10 grid size-7 sm:size-9 place-items-center rounded-lg sm:rounded-xl bg-brand shadow-card transition-all duration-300 ${
+                  activeId === "overview" ? "scale-105" : "group-hover:scale-105"
+                }`}
                 style={{
                   boxShadow:
-                    "0 0 0 1.5px rgba(0,128,128,0.2), 0 3px 14px -3px rgba(0,128,128,0.5)",
+                    activeId === "overview"
+                      ? "0 0 0 2px rgba(0,128,128,0.35), 0 3px 14px -3px rgba(0,128,128,0.6)"
+                      : "0 0 0 1.5px rgba(0,128,128,0.2), 0 3px 14px -3px rgba(0,128,128,0.5)",
                 }}
               >
                 <BarChart3 className="size-3.5 sm:size-4 text-white" strokeWidth={2.5} />
               </span>
 
               {/* Central Label */}
-              <span className="mt-1 whitespace-nowrap text-[9px] md:text-xs font-extrabold tracking-tight text-brand">
+              <span
+                className={`mt-1 whitespace-nowrap text-[9px] md:text-xs font-extrabold tracking-tight transition-colors duration-300 ${
+                  activeId === "overview" ? "text-brand underline decoration-brand/40 underline-offset-2" : "text-brand"
+                }`}
+              >
                 Ignishun Tech
               </span>
 
@@ -252,7 +316,7 @@ export function EcosystemHub({ delay = 0 }: { delay?: number }) {
                   Live
                 </span>
               </span>
-            </div>
+            </button>
 
             {/* ── Right two nodes (Paid Ads, SEO & Content) ── */}
             {CHANNELS.slice(2, 4).map((ch) => (
@@ -261,8 +325,10 @@ export function EcosystemHub({ delay = 0 }: { delay?: number }) {
                 <ChannelNode
                   channel={ch}
                   active={activeId === ch.id}
-                  onEnter={() => setActiveId(ch.id)}
-                  onLeave={() => setActiveId(null)}
+                  isHovered={hoveredId === ch.id}
+                  onClick={() => navigate({ to: ch.to })}
+                  onEnter={() => setHoveredId(ch.id)}
+                  onLeave={() => setHoveredId(null)}
                 />
               </div>
             ))}

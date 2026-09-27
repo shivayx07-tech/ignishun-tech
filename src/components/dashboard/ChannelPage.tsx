@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { EcosystemHub } from "@/components/dashboard/EcosystemHub";
 import { MetricCard, type Metric } from "@/components/dashboard/MetricCard";
 
 /** Shared shell for channel tabs: metric cards on top, tab-specific detail below. */
@@ -9,15 +10,18 @@ export function ChannelPage({
   subtitle,
   metrics,
   children,
+  showHub = true,
 }: {
   title: string;
   subtitle: string;
   metrics: Metric[];
   children?: ReactNode;
+  showHub?: boolean;
 }) {
   return (
     <DashboardLayout title={title} subtitle={subtitle}>
       <div className="flex flex-col gap-6">
+        {showHub && <EcosystemHub delay={60} />}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {metrics.map((metric, i) => (
             <MetricCard key={metric.label} metric={metric} delay={120 + i * 90} />

@@ -17,7 +17,7 @@ export function parseMetricValue(raw: string): {
 } {
   // Fraction pattern: "4/4"
   const fractionMatch = raw.match(/^(\d+)\/(\d+)$/);
-  if (fractionMatch) {
+  if (fractionMatch && fractionMatch[1] && fractionMatch[2]) {
     return {
       prefix: "",
       suffix: `/${fractionMatch[2]}`,
@@ -29,16 +29,16 @@ export function parseMetricValue(raw: string): {
 
   // Extract prefix chars (e.g. "+", "-", "$")
   const prefixMatch = raw.match(/^([+\-$]*)/);
-  const prefix = prefixMatch ? prefixMatch[1] : "";
+  const prefix = prefixMatch?.[1] ?? "";
 
   // Extract suffix chars (e.g. "%", "K", "M")
   const suffixMatch = raw.match(/([%KMkm]+)$/);
-  const suffix = suffixMatch ? suffixMatch[1] : "";
+  const suffix = suffixMatch?.[1] ?? "";
 
   // Extract numeric portion
   const numStr = raw.replace(prefix, "").replace(suffix, "").replace(/,/g, "");
   const num = parseFloat(numStr);
-  const decimals = numStr.includes(".") ? numStr.split(".")[1].length : 0;
+  const decimals = numStr.includes(".") ? (numStr.split(".")[1]?.length ?? 0) : 0;
 
   return { prefix, suffix, target: num, decimals, denominator: "" };
 }
